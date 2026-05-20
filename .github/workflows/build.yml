@@ -16,19 +16,9 @@ jobs:
       matrix:
         include:
           - os: macos-latest
-            target: aarch64-apple-darwin
-            gs_asset: ghostscript-10.07.0-macos-arm64.tar.gz
-            gs_binary: gs
-            gs_dest: src-tauri/binaries/gs-aarch64-apple-darwin
-          - os: macos-13
-            target: x86_64-apple-darwin
-            gs_asset: ghostscript-10.07.0-macos-x86_64.tar.gz
-            gs_binary: gs
-            gs_dest: src-tauri/binaries/gs-x86_64-apple-darwin
+            target: universal-apple-darwin
           - os: windows-latest
             target: x86_64-pc-windows-msvc
-            gs_binary: gswin64c.exe
-            gs_dest: src-tauri/binaries/gs-x86_64-pc-windows-msvc.exe
 
     runs-on: ${{ matrix.os }}
 
@@ -44,7 +34,7 @@ jobs:
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
 
       - name: Rust cache
         uses: swatinem/rust-cache@v2
@@ -56,8 +46,11 @@ jobs:
         run: |
           brew install ghostscript
           mkdir -p src-tauri/binaries
-          cp "$(which gs)" ${{ matrix.gs_dest }}
-          chmod +x ${{ matrix.gs_dest }}
+          GS=$(which gs)
+          cp "$GS" src-tauri/binaries/gs-aarch64-apple-darwin
+          cp "$GS" src-tauri/binaries/gs-x86_64-apple-darwin
+          chmod +x src-tauri/binaries/gs-aarch64-apple-darwin
+          chmod +x src-tauri/binaries/gs-x86_64-apple-darwin
 
       - name: Install Ghostscript (Windows)
         if: runner.os == 'Windows'
