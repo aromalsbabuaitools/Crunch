@@ -73,6 +73,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
+          releaseName: Crunch ${{ github.ref_name }}
+          releaseBody: "Download the installer for your platform below."
+          releaseDraft: false
+          prerelease: false
           appName: Crunch
           appVersion: ${{ github.ref_name }}
           args: --target ${{ matrix.target }}
