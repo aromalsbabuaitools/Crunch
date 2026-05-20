@@ -55,7 +55,13 @@ jobs:
           X86_GS=/usr/local/bin/gs
 
           mkdir -p src-tauri/binaries
+          # Individual arch binaries (required by Tauri build script)
+          cp "$ARM_GS" src-tauri/binaries/gs-aarch64-apple-darwin
+          cp "$X86_GS" src-tauri/binaries/gs-x86_64-apple-darwin
+          # Universal binary (required for bundling)
           lipo -create "$ARM_GS" "$X86_GS" -output src-tauri/binaries/gs-universal-apple-darwin
+          chmod +x src-tauri/binaries/gs-aarch64-apple-darwin
+          chmod +x src-tauri/binaries/gs-x86_64-apple-darwin
           chmod +x src-tauri/binaries/gs-universal-apple-darwin
 
       - name: Install Ghostscript (Windows)
