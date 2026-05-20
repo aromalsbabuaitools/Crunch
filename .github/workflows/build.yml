@@ -41,16 +41,22 @@ jobs:
         with:
           workspaces: src-tauri
 
-      - name: Install Ghostscript (macOS)
+      - name: Install Ghostscript (macOS universal)
         if: runner.os == 'macOS'
         run: |
+          # ARM64 Ghostscript via native Homebrew
           brew install ghostscript
+          ARM_GS=$(which gs)
+
+          # x86_64 Ghostscript via Rosetta Homebrew
+          arch -x86_64 /bin/bash -c \
+            '[ -f /usr/local/bin/brew ] || NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+          arch -x86_64 /usr/local/bin/brew install ghostscript
+          X86_GS=/usr/local/bin/gs
+
           mkdir -p src-tauri/binaries
-          GS=$(which gs)
-          cp "$GS" src-tauri/binaries/gs-aarch64-apple-darwin
-          cp "$GS" src-tauri/binaries/gs-x86_64-apple-darwin
-          chmod +x src-tauri/binaries/gs-aarch64-apple-darwin
-          chmod +x src-tauri/binaries/gs-x86_64-apple-darwin
+          lipo -create "$ARM_GS" "$X86_GS" -output src-tauri/binaries/gs-universal-apple-darwin
+          chmod +x src-tauri/binaries/gs-universal-apple-darwin
 
       - name: Install Ghostscript (Windows)
         if: runner.os == 'Windows'
