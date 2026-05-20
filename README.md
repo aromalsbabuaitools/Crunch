@@ -20,67 +20,36 @@ Drag in your files, pick a compression level, and you're done.
 
 ---
 
+## Download
+
+All releases are on the [GitHub Releases page](https://github.com/aromalsbabuailearning1-web/Crunch/releases).
+
+| Platform | File |
+|----------|------|
+| macOS (Apple Silicon + Intel) | `Crunch_x.x.x_universal.dmg` |
+| Windows 64-bit (installer) | `Crunch_x.x.x_x64-setup.exe` |
+| Windows 64-bit (MSI) | `Crunch_x.x.x_x64_en-US.msi` |
+
+---
+
 ## Install
 
 ### macOS
 
-The built DMG is located at:
-
-```
-src-tauri/target/release/bundle/dmg/Crunch_0.1.0_aarch64.dmg
-```
-
-1. Open `Crunch_0.1.0_aarch64.dmg`
-2. Drag **Crunch** into your **Applications** folder
-3. On first launch, right-click the app → **Open** (macOS Gatekeeper will ask you to confirm once since the app isn't notarized)
+1. Download `Crunch_x.x.x_universal.dmg` from the [Releases page](https://github.com/aromalsbabuailearning1-web/Crunch/releases)
+2. Open the `.dmg` and drag **Crunch** into your **Applications** folder
+3. On first launch, right-click the app → **Open** (Gatekeeper will ask you to confirm once since the app isn't notarized)
 4. After that, open it normally from Launchpad or Spotlight
 
-> Supports Apple Silicon (M1/M2/M3). An Intel build can be produced by running on an Intel Mac or via the GitHub Actions workflow.
+> Supports both Apple Silicon (M1/M2/M3/M4) and Intel Macs — one universal binary.
 
 ### Windows
 
-Windows cannot be built from macOS. Use one of these two approaches:
-
-#### Option 1 — GitHub Actions (recommended)
-
-Push a version tag to trigger an automated Windows build:
-
-```bash
-git tag v0.1.0
-git push origin v0.1.0
-```
-
-The workflow (`.github/workflows/build.yml`) runs on a `windows-latest` runner, installs Ghostscript via Chocolatey, builds the app, and uploads a `.exe` installer as a GitHub Release asset. The build takes ~10–15 minutes.
-
-Download the resulting `Crunch_0.1.0_x64-setup.exe` from the **Releases** page on GitHub, run it, and Crunch will appear in the Start Menu.
+1. Download `Crunch_x.x.x_x64-setup.exe` from the [Releases page](https://github.com/aromalsbabuailearning1-web/Crunch/releases)
+2. Run the installer and follow the prompts
+3. Crunch will appear in the Start Menu
 
 > Windows SmartScreen may show a warning on first run — click **More info → Run anyway**. This happens because the app isn't code-signed yet.
-
-#### Option 2 — Build on a Windows machine
-
-1. Install [Rust](https://rustup.rs/) 1.85+, [Node.js](https://nodejs.org/) 18+, and [Ghostscript](https://www.ghostscript.com/releases/gsdnld.html) for Windows
-2. Clone the repo and install dependencies:
-   ```bash
-   git clone https://github.com/aromalsbabuailearning1-web/Crunch.git
-   cd Crunch
-   npm install
-   ```
-3. Copy the Ghostscript executable into the sidecar folder:
-   ```
-   # Default Ghostscript install path on Windows:
-   C:\Program Files\gs\gs10.07.0\bin\gswin64c.exe
-   
-   # Copy it to:
-   src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe
-   ```
-4. Build:
-   ```bash
-   npm run tauri build
-   ```
-5. The installer is output to:
-   ```
-   src-tauri\target\release\bundle\nsis\Crunch_0.1.0_x64-setup.exe
-   ```
 
 ---
 
@@ -94,24 +63,75 @@ Download the resulting `Crunch_0.1.0_x64-setup.exe` from the **Releases** page o
 
 ---
 
-## Building from source (macOS)
+## Building from source
 
 **Requirements:** Rust 1.85+, Node.js 18+, Ghostscript
+
+### macOS
 
 ```bash
 git clone https://github.com/aromalsbabuailearning1-web/Crunch.git
 cd Crunch
 npm install
 
-# Install Ghostscript and copy the binary into the sidecar folder:
+# Install Ghostscript and set up the sidecar binaries
 brew install ghostscript
 mkdir -p src-tauri/binaries
-cp "$(which gs)" src-tauri/binaries/gs-aarch64-apple-darwin   # Apple Silicon
-# or
-cp "$(which gs)" src-tauri/binaries/gs-x86_64-apple-darwin    # Intel
+
+# For a universal build (Apple Silicon + Intel):
+ARM_GS=$(which gs)
+arch -x86_64 /usr/local/bin/brew install ghostscript   # requires Rosetta
+lipo -create "$ARM_GS" /usr/local/bin/gs \
+  -output src-tauri/binaries/gs-universal-apple-darwin
+cp "$ARM_GS" src-tauri/binaries/gs-aarch64-apple-darwin
+cp /usr/local/bin/gs src-tauri/binaries/gs-x86_64-apple-darwin
+
+# Or for Apple Silicon only:
+cp "$(which gs)" src-tauri/binaries/gs-aarch64-apple-darwin
 
 npm run tauri dev       # development
 npm run tauri build     # production build
 ```
 
 Output lands in `src-tauri/target/release/bundle/`.
+
+### Windows
+
+1. Install [Rust](https://rustup.rs/) 1.85+, [Node.js](https://nodejs.org/) 18+, and [Ghostscript](https://www.ghostscript.com/releases/gsdnld.html) for Windows
+2. Clone the repo and install dependencies:
+   ```bash
+   git clone https://github.com/aromalsbabuailearning1-web/Crunch.git
+   cd Crunch
+   npm install
+   ```
+3. Copy the Ghostscript CLI executable into the sidecar folder:
+   ```
+   # Default install location:
+   C:\Program Files\gs\gs10.xx.x\bin\gswin64c.exe
+
+   # Copy to:
+   src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe
+   ```
+4. Build:
+   ```bash
+   npm run tauri build
+   ```
+
+   Output: `src-tauri\target\release\bundle\nsis\Crunch_x.x.x_x64-setup.exe`
+
+---
+
+## CI / Automated builds
+
+Releases are built automatically via GitHub Actions (`.github/workflows/build.yml`) on every version tag push:
+
+```bash
+git tag v1.0.0
+git push origin v1.0.0
+```
+
+This triggers two parallel jobs:
+- **macOS** (`macos-latest`) — universal binary (ARM64 + x86_64) via `lipo`, produces a `.dmg`
+- **Windows** (`windows-latest`) — x64 build via MSVC, produces `.exe` and `.msi`
+
+All artifacts are uploaded automatically to the GitHub Release for that tag.
