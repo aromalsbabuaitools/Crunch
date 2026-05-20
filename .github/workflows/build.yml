@@ -1,0 +1,79 @@
+name: Build
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            gs_asset: ghostscript-10.07.0-macos-arm64.tar.gz
+            gs_binary: gs
+            gs_dest: src-tauri/binaries/gs-aarch64-apple-darwin
+          - os: macos-13
+            target: x86_64-apple-darwin
+            gs_asset: ghostscript-10.07.0-macos-x86_64.tar.gz
+            gs_binary: gs
+            gs_dest: src-tauri/binaries/gs-x86_64-apple-darwin
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            gs_binary: gswin64c.exe
+            gs_dest: src-tauri/binaries/gs-x86_64-pc-windows-msvc.exe
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Install Ghostscript (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          brew install ghostscript
+          mkdir -p src-tauri/binaries
+          cp "$(which gs)" ${{ matrix.gs_dest }}
+          chmod +x ${{ matrix.gs_dest }}
+
+      - name: Install Ghostscript (Windows)
+        if: runner.os == 'Windows'
+        run: |
+          choco install ghostscript --no-progress -y
+          $gsExe = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" | Select-Object -First 1 -ExpandProperty FullName
+          New-Item -ItemType Directory -Force -Path "src-tauri\binaries"
+          Copy-Item $gsExe "src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe"
+
+      - name: Install frontend dependencies
+        run: npm ci
+
+      - name: Build
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          appName: Crunch
+          appVersion: ${{ github.ref_name }}
+          args: --target ${{ matrix.target }}
+          includeUpdaterJson: false
