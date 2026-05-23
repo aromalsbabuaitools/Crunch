@@ -1,5 +1,5 @@
 import { motion } from "framer-motion"
-import { X, Eye, FileText, Loader2, CheckCircle2, AlertCircle } from "lucide-react"
+import { X, Eye, FileText, Loader2, CheckCircle2, AlertCircle, FilePen } from "lucide-react"
 import { AppFile } from "../store/useAppStore"
 import { formatBytes } from "../lib/utils"
 
@@ -7,6 +7,7 @@ interface Props {
   file: AppFile
   onRemove: (id: string) => void
   onPreview: (id: string) => void
+  onEdit?: (id: string) => void
 }
 
 const statusIcon = {
@@ -16,7 +17,7 @@ const statusIcon = {
   error: <AlertCircle size={14} className="text-red-400" />,
 }
 
-export default function FileListItem({ file, onRemove, onPreview }: Props) {
+export default function FileListItem({ file, onRemove, onPreview, onEdit }: Props) {
   const savings =
     file.compressedSize && file.originalSize
       ? Math.round(((file.originalSize - file.compressedSize) / file.originalSize) * 100)
@@ -81,6 +82,15 @@ export default function FileListItem({ file, onRemove, onPreview }: Props) {
 
       {/* Actions */}
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        {file.type === "pdf" && file.status !== "compressing" && onEdit && (
+          <button
+            onClick={() => onEdit(file.id)}
+            title="Edit PDF"
+            className="w-7 h-7 rounded-lg flex items-center justify-center text-dark-muted hover:text-neon-purple hover:bg-neon-purple/10 transition-colors"
+          >
+            <FilePen size={14} />
+          </button>
+        )}
         {file.status === "done" && (
           <button
             onClick={() => onPreview(file.id)}

@@ -34,6 +34,7 @@ interface AppStore {
   preset: CompressionPreset
   outputDir: string | null
   previewFileId: string | null
+  editingFileId: string | null
   isCompressing: boolean
   history: HistoryEntry[]
 
@@ -44,6 +45,7 @@ interface AppStore {
   setPreset: (p: CompressionPreset) => void
   setOutputDir: (dir: string | null) => void
   setPreviewFileId: (id: string | null) => void
+  setEditingFileId: (id: string | null) => void
   setThumbnail: (id: string, thumb: string) => void
   setFileStatus: (id: string, status: FileStatus, extra?: Partial<AppFile>) => void
   setFileProgress: (id: string, progress: number) => void
@@ -70,6 +72,7 @@ export const useAppStore = create<AppStore>((set) => ({
   preset: "balanced",
   outputDir: null,
   previewFileId: null,
+  editingFileId: null,
   isCompressing: false,
   history: loadHistory(),
 
@@ -106,6 +109,8 @@ export const useAppStore = create<AppStore>((set) => ({
   setOutputDir: (dir) => set({ outputDir: dir }),
 
   setPreviewFileId: (id) => set({ previewFileId: id }),
+
+  setEditingFileId: (id) => set({ editingFileId: id }),
 
   setThumbnail: (id, thumb) =>
     set((state) => ({

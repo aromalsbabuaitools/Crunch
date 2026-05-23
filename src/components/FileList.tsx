@@ -15,6 +15,7 @@ export default function FileList() {
   const addFiles = useAppStore((s) => s.addFiles)
   const setThumbnail = useAppStore((s) => s.setThumbnail)
   const setPreviewFileId = useAppStore((s) => s.setPreviewFileId)
+  const setEditingFileId = useAppStore((s) => s.setEditingFileId)
 
   const handleAddMore = async () => {
     const selected = await open({
@@ -82,6 +83,7 @@ export default function FileList() {
               file={file}
               onRemove={removeFile}
               onPreview={setPreviewFileId}
+              onEdit={setEditingFileId}
             />
           ))}
         </AnimatePresence>

@@ -18,6 +18,18 @@ Drag in your files, pick a compression level, and you're done.
 - **Custom output folder** — optionally send all output to a single folder
 - **Compression history** — last 10 operations shown in the history panel
 
+### PDF Editor (new in v1.2.0)
+
+Click the **Edit** button on any PDF row to open the full-screen editor:
+
+- **Text** — click anywhere on the page to insert text; choose font, size, and colour; drag to reposition; double-click to re-edit
+- **Freehand drawing** — pen tool with adjustable width and colour
+- **Highlights** — drag to draw a translucent highlight rectangle over any area
+- **Signature images** — insert a PNG or JPG signature image, then freely resize (no aspect-ratio lock) and rotate it
+- **Page management** — reorder pages by dragging thumbnails, delete pages, or insert blank pages
+- **Undo** — Cmd/Ctrl+Z or the toolbar button steps back through any combination of edits
+- **Save** — writes the annotated file as `filename_edited.pdf` and adds it to the file list automatically
+
 ---
 
 ## Download
@@ -55,11 +67,21 @@ All releases are on the [GitHub Releases page](https://github.com/aromalsbabuail
 
 ## How to use
 
+### Compressing files
+
 1. **Add files** — drag images or PDFs onto the drop zone, or click it to browse
 2. **Pick a level** — choose Light, Balanced, or Aggressive, or fine-tune with the quality slider
 3. **Compress** — hit the **Compress** button; progress shows per file
 4. **Preview** — click the eye icon on any finished file to compare original vs compressed side by side
 5. **Find your files** — compressed files are saved next to the originals by default (with `_compressed` added to the name), or in a folder you choose
+
+### Editing a PDF
+
+1. Add a PDF to the file list
+2. Click the **Edit** (pencil) button on the PDF row — the full-screen editor opens
+3. Pick a tool from the right toolbar: Text, Pen, Highlight, Signature, or Page Management
+4. Make your annotations — undo any step with Cmd/Ctrl+Z or the Undo button
+5. Click **Save as _edited.pdf** — the edited file is written to disk and added to the list
 
 ---
 

@@ -4,19 +4,24 @@ import DropZone from "./components/DropZone"
 import FileList from "./components/FileList"
 import ControlPanel from "./components/ControlPanel"
 import PreviewModal from "./components/PreviewModal"
+import PDFEditor from "./components/PDFEditor/PDFEditor"
 import { useAppStore } from "./store/useAppStore"
 
 export default function App() {
   const files = useAppStore((s) => s.files)
   const setPreviewFileId = useAppStore((s) => s.setPreviewFileId)
+  const setEditingFileId = useAppStore((s) => s.setEditingFileId)
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setPreviewFileId(null)
+      if (e.key === "Escape") {
+        setPreviewFileId(null)
+        setEditingFileId(null)
+      }
     }
     window.addEventListener("keydown", handler)
     return () => window.removeEventListener("keydown", handler)
-  }, [setPreviewFileId])
+  }, [setPreviewFileId, setEditingFileId])
 
   return (
     <div className="flex flex-col h-screen bg-dark-bg text-dark-text overflow-hidden">
@@ -30,6 +35,7 @@ export default function App() {
       </div>
 
       <PreviewModal />
+      <PDFEditor />
     </div>
   )
 }

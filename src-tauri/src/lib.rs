@@ -1,8 +1,10 @@
 mod compress;
 mod thumbnail;
+mod editor;
 
 use compress::{images::compress_image, pdf::compress_pdf};
 use thumbnail::get_thumbnail;
+use editor::write_bytes;
 
 #[tauri::command]
 async fn get_file_info(path: String) -> Result<serde_json::Value, String> {
@@ -37,6 +39,7 @@ pub fn run() {
             compress_pdf,
             get_thumbnail,
             get_file_info,
+            write_bytes,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
