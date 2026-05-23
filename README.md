@@ -104,14 +104,17 @@ Output lands in `src-tauri/target/release/bundle/`.
    cd Crunch
    npm install
    ```
-3. Copy the Ghostscript CLI executable into the sidecar folder:
+3. Copy the Ghostscript CLI executable **and its DLL** into the sidecar folder:
    ```
    # Default install location:
    C:\Program Files\gs\gs10.xx.x\bin\gswin64c.exe
+   C:\Program Files\gs\gs10.xx.x\bin\gsdll64.dll
 
-   # Copy to:
+   # Copy both to:
    src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe
+   src-tauri\binaries\gsdll64.dll
    ```
+   Both files are required. `gswin64c.exe` is a thin loader that calls `LoadLibrary("gsdll64.dll")` — omitting the DLL causes a LoadLibrary error 126 at runtime.
 4. Build:
    ```bash
    npm run tauri build

@@ -69,8 +69,10 @@ jobs:
         run: |
           choco install ghostscript --no-progress -y
           $gsExe = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" | Select-Object -First 1 -ExpandProperty FullName
+          $gsDir = Split-Path $gsExe
           New-Item -ItemType Directory -Force -Path "src-tauri\binaries"
           Copy-Item $gsExe "src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe"
+          Copy-Item (Join-Path $gsDir "gsdll64.dll") "src-tauri\binaries\gsdll64.dll"
 
       - name: Install frontend dependencies
         run: npm ci
