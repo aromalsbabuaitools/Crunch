@@ -32,6 +32,25 @@ function ZoomControls() {
   )
 }
 
+interface PaneHeaderProps {
+  label: string
+  size: number
+  accent?: "muted" | "green"
+}
+
+function PaneHeader({ label, size, accent = "muted" }: PaneHeaderProps) {
+  return (
+    <div className="px-4 py-2 border-b border-dark-border flex items-center justify-between bg-dark-card/60 flex-shrink-0">
+      <span className={`text-xs font-semibold uppercase tracking-wider ${accent === "green" ? "text-neon-green" : "text-dark-muted"}`}>
+        {label}
+      </span>
+      <span className={`text-xs font-mono ${accent === "green" ? "text-neon-green" : "text-dark-muted"}`}>
+        {formatBytes(size)}
+      </span>
+    </div>
+  )
+}
+
 interface ImagePaneProps {
   src: string
   label: string
@@ -45,17 +64,8 @@ function ImagePane({ src, label, size, accent = "muted" }: ImagePaneProps) {
 
   return (
     <div className="flex flex-col min-h-0 min-w-0">
-      {/* Pane header */}
-      <div className="px-4 py-2 border-b border-dark-border flex items-center justify-between bg-dark-card/60 flex-shrink-0">
-        <span className={`text-xs font-semibold uppercase tracking-wider ${accent === "green" ? "text-neon-green" : "text-dark-muted"}`}>
-          {label}
-        </span>
-        <span className={`text-xs font-mono ${accent === "green" ? "text-neon-green" : "text-dark-muted"}`}>
-          {formatBytes(size)}
-        </span>
-      </div>
+      <PaneHeader label={label} size={size} accent={accent} />
 
-      {/* Image area */}
       <div className="flex-1 overflow-hidden relative bg-[#0a0a14]">
         <TransformWrapper
           minScale={0.1}
@@ -104,6 +114,37 @@ function ImagePane({ src, label, size, accent = "muted" }: ImagePaneProps) {
             </>
           )}
         </TransformWrapper>
+      </div>
+    </div>
+  )
+}
+
+interface PdfPaneProps {
+  src: string
+  label: string
+  size: number
+  page: number
+  accent?: "muted" | "green"
+}
+
+function PdfPane({ src, label, size, page, accent = "muted" }: PdfPaneProps) {
+  return (
+    <div className="flex flex-col min-h-0 min-w-0">
+      <PaneHeader label={label} size={size} accent={accent} />
+
+      <div className="flex-1 overflow-hidden relative bg-[#0a0a14]">
+        {src ? (
+          <iframe
+            key={`${src}-${page}`}
+            src={`${src}#page=${page + 1}`}
+            className="w-full h-full border-0"
+            title={label}
+          />
+        ) : (
+          <div className="flex items-center justify-center h-full">
+            <span className="text-dark-muted text-xs">Not yet compressed</span>
+          </div>
+        )}
       </div>
     </div>
   )
@@ -168,18 +209,17 @@ export default function PreviewModal() {
 
             {/* Side-by-side panes */}
             <div className="flex-1 grid grid-cols-2 min-h-0 divide-x divide-dark-border">
-              <ImagePane
-                src={originalSrc}
-                label="Original"
-                size={file.originalSize}
-                accent="muted"
-              />
-              <ImagePane
-                src={compressedSrc}
-                label="Compressed"
-                size={file.compressedSize ?? 0}
-                accent="green"
-              />
+              {file.type === "pdf" ? (
+                <>
+                  <PdfPane src={originalSrc} label="Original" size={file.originalSize} page={page} accent="muted" />
+                  <PdfPane src={compressedSrc} label="Compressed" size={file.compressedSize ?? 0} page={page} accent="green" />
+                </>
+              ) : (
+                <>
+                  <ImagePane src={originalSrc} label="Original" size={file.originalSize} accent="muted" />
+                  <ImagePane src={compressedSrc} label="Compressed" size={file.compressedSize ?? 0} accent="green" />
+                </>
+              )}
             </div>
 
             {/* PDF page nav */}
