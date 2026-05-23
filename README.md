@@ -18,7 +18,7 @@ Drag in your files, pick a compression level, and you're done.
 - **Custom output folder** — optionally send all output to a single folder
 - **Compression history** — last 10 operations shown in the history panel
 
-### PDF Editor (new in v1.2.0)
+### PDF Editor (new in v0.2.0)
 
 Click the **Edit** button on any PDF row to open the full-screen editor:
 
