@@ -138,8 +138,8 @@ export async function buildEditedPDF(
           pdfH
         )
         page.drawSvgPath(pdfPath, {
-          x: 0,
-          y: pdfH,
+          x: edit.offsetX,
+          y: pdfH + edit.offsetY,
           color: undefined,
           borderColor: rgbToColor(edit.strokeColor),
           borderWidth: edit.strokeWidth * (pdfW / edit.canvasWidth),

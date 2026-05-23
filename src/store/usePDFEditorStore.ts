@@ -27,6 +27,8 @@ export interface DrawEdit {
   canvasHeight: number
   pdfWidth: number
   pdfHeight: number
+  offsetX: number   // translation in PDF points (positive = right)
+  offsetY: number   // translation in PDF points (positive = up)
 }
 
 export interface HighlightEdit {

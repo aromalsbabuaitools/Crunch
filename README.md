@@ -23,7 +23,7 @@ Drag in your files, pick a compression level, and you're done.
 Click the **Edit** button on any PDF row to open the full-screen editor:
 
 - **Text** — click anywhere on the page to insert text; choose font, size, and colour; drag to reposition; double-click to re-edit
-- **Freehand drawing** — pen tool with adjustable width and colour
+- **Freehand drawing** — pen tool with adjustable width and colour; drawings can be selected, moved, and deleted in select mode
 - **Highlights** — drag to draw a translucent highlight rectangle over any area
 - **Signature images** — insert a PNG or JPG signature image, then freely resize (no aspect-ratio lock) and rotate it
 - **Page management** — reorder pages by dragging thumbnails, delete pages, or insert blank pages

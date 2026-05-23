@@ -79,7 +79,12 @@ export default function PageCanvas({
   const [livePathD, setLivePathD] = useState<string | null>(null)
   const highlightAnchorRef = useRef<{ x: number; y: number } | null>(null)
   const [liveHighlight, setLiveHighlight] = useState<{ x: number; y: number; w: number; h: number } | null>(null)
-  const svgDragRef = useRef<{ editId: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
+  const svgDragRef = useRef<{
+    editId: string
+    isDraw: boolean   // true → update offsetX/offsetY; false → update x/y
+    startX: number; startY: number
+    origX: number; origY: number
+  } | null>(null)
   const textDragRef = useRef<{ editId: string; startX: number; startY: number; origX: number; origY: number } | null>(null)
   const resizeRef = useRef<{
     editId: string
@@ -225,10 +230,17 @@ export default function PageCanvas({
     if (svgDragRef.current) {
       const dx = (e.clientX - svgDragRef.current.startX) * (pdfW / cssW)
       const dy = (e.clientY - svgDragRef.current.startY) * (pdfH / cssH)
-      onUpdateEdit(svgDragRef.current.editId, {
-        x: svgDragRef.current.origX + dx,
-        y: svgDragRef.current.origY - dy,
-      } as Partial<ContentEdit>)
+      if (svgDragRef.current.isDraw) {
+        onUpdateEdit(svgDragRef.current.editId, {
+          offsetX: svgDragRef.current.origX + dx,
+          offsetY: svgDragRef.current.origY - dy,
+        } as Partial<ContentEdit>)
+      } else {
+        onUpdateEdit(svgDragRef.current.editId, {
+          x: svgDragRef.current.origX + dx,
+          y: svgDragRef.current.origY - dy,
+        } as Partial<ContentEdit>)
+      }
     }
   }
 
@@ -249,6 +261,8 @@ export default function PageCanvas({
           canvasHeight: cssH,
           pdfWidth: pdfW,
           pdfHeight: pdfH,
+          offsetX: 0,
+          offsetY: 0,
         })
       }
       return
@@ -281,14 +295,15 @@ export default function PageCanvas({
     if (activeTool !== "select") return
     onSelectEdit(editId)
     const edit = edits.find((ed) => ed.id === editId)
-    if (!edit || edit.kind === "draw") return
+    if (!edit) return
     onSnapshotHistory()
     svgDragRef.current = {
       editId,
+      isDraw: edit.kind === "draw",
       startX: e.clientX,
       startY: e.clientY,
-      origX: edit.x,
-      origY: edit.y,
+      origX: edit.kind === "draw" ? edit.offsetX : edit.x,
+      origY: edit.kind === "draw" ? edit.offsetY : edit.y,
     }
     e.currentTarget.setPointerCapture(e.pointerId)
   }
@@ -541,18 +556,29 @@ export default function PageCanvas({
           if (edit.kind === "draw") {
             const scaleX = cssW / edit.canvasWidth
             const scaleY = cssH / edit.canvasHeight
+            const txCss = edit.offsetX * (cssW / pdfW)
+            const tyCss = -edit.offsetY * (cssH / pdfH)
             return (
-              <g key={edit.id} transform={`scale(${scaleX},${scaleY})`}>
+              <g key={edit.id} transform={`translate(${txCss},${tyCss}) scale(${scaleX},${scaleY})`}>
+                {/* Selection halo */}
                 {isSelected && (
                   <path d={edit.svgPath} fill="none" stroke="#00f5ff"
-                    strokeWidth={(edit.strokeWidth + 4) / scaleX}
+                    strokeWidth={(edit.strokeWidth + 6) / scaleX}
                     strokeLinecap="round" strokeLinejoin="round" opacity={0.4} pointerEvents="none" />
                 )}
+                {/* Visible stroke */}
                 <path d={edit.svgPath} fill="none"
                   stroke={rgbToCss(edit.strokeColor)} strokeWidth={edit.strokeWidth / scaleX}
                   strokeLinecap="round" strokeLinejoin="round"
-                  cursor={activeTool === "select" ? "pointer" : "default"}
-                  onPointerDown={(e) => { e.stopPropagation(); onSelectEdit(edit.id) }}
+                  pointerEvents="none"
+                />
+                {/* Fat invisible hit area — wide enough to grab easily */}
+                <path d={edit.svgPath} fill="none" stroke="transparent"
+                  strokeWidth={Math.max(20, edit.strokeWidth + 12) / scaleX}
+                  strokeLinecap="round" strokeLinejoin="round"
+                  cursor={activeTool === "select" ? "move" : "default"}
+                  pointerEvents={activeTool === "select" ? "stroke" : "none"}
+                  onPointerDown={(e) => onSvgEditPointerDown(e as React.PointerEvent, edit.id)}
                 />
               </g>
             )
