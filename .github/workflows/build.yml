@@ -66,9 +66,16 @@ jobs:
 
       - name: Install Ghostscript (Windows)
         if: runner.os == 'Windows'
+        shell: pwsh
         run: |
-          choco install ghostscript --no-progress -y
-          $gsExe = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" | Select-Object -First 1 -ExpandProperty FullName
+          # Download directly from official releases — Chocolatey's NSIS installer
+          # crashes with an access violation on some GitHub Actions runners.
+          $url = "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10040/gs10040w64.exe"
+          $installer = "$env:TEMP\gs-installer.exe"
+          Invoke-WebRequest -Uri $url -OutFile $installer -UseBasicParsing
+          Start-Process -FilePath $installer -ArgumentList "/S" -Wait
+          $gsExe = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" |
+                   Select-Object -First 1 -ExpandProperty FullName
           $gsDir = Split-Path $gsExe
           New-Item -ItemType Directory -Force -Path "src-tauri\binaries"
           Copy-Item $gsExe "src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe"
