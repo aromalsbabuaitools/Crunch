@@ -68,15 +68,22 @@ jobs:
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          # winget is pre-installed on windows-latest and avoids NSIS installer issues
-          winget install --id ArtifexSoftware.Ghostscript --silent `
-            --accept-package-agreements --accept-source-agreements
-          $gsExe = Get-ChildItem "C:\Program Files\gs" -Recurse -Filter "gswin64c.exe" `
-                   -ErrorAction SilentlyContinue | Select-Object -First 1 -ExpandProperty FullName
-          $gsDir = Split-Path $gsExe
+          # Download the NSIS installer then extract with 7-Zip — avoids running
+          # the installer (which either crashes or hangs on GitHub Actions runners).
+          # 7-Zip is pre-installed on windows-latest at the path below.
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest `
+            "https://github.com/ArtifexSoftware/ghostpdl-downloads/releases/download/gs10031/gs10031w64.exe" `
+            -OutFile "$env:TEMP\gs.exe" -UseBasicParsing
+          $extract = "$env:TEMP\gs-extracted"
+          & "C:\Program Files\7-Zip\7z.exe" x "$env:TEMP\gs.exe" -o"$extract" -y | Out-Null
+          $gsExe = Get-ChildItem $extract -Recurse -Filter "gswin64c.exe" |
+                   Select-Object -First 1 -ExpandProperty FullName
+          $gsDll = Get-ChildItem $extract -Recurse -Filter "gsdll64.dll" |
+                   Select-Object -First 1 -ExpandProperty FullName
           New-Item -ItemType Directory -Force -Path "src-tauri\binaries" | Out-Null
           Copy-Item $gsExe "src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe"
-          Copy-Item "$gsDir\gsdll64.dll" "src-tauri\binaries\gsdll64.dll"
+          Copy-Item $gsDll "src-tauri\binaries\gsdll64.dll"
 
       - name: Install frontend dependencies
         run: npm ci
