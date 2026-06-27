@@ -1,5 +1,6 @@
 import { PDFDocument, rgb, StandardFonts, LineCapStyle, degrees } from "pdf-lib"
 import { parseSVG, makeAbsolute } from "svg-path-parser"
+import { convertFileSrc } from "@tauri-apps/api/core"
 import type { ContentEdit, LogicalPage } from "../../store/usePDFEditorStore"
 
 type SvgCmd = Record<string, unknown>
@@ -51,10 +52,24 @@ export async function buildEditedPDF(
   const srcDoc = await PDFDocument.load(originalBytes)
   const outDoc = await PDFDocument.create()
 
+  // Pre-load any external PDFs referenced by inserted pages
+  const externalDocs = new Map<string, PDFDocument>()
+  for (const entry of logicalPages) {
+    if (entry.type === "external" && !externalDocs.has(entry.filePath)) {
+      const res = await fetch(convertFileSrc(entry.filePath))
+      const bytes = await res.arrayBuffer()
+      externalDocs.set(entry.filePath, await PDFDocument.load(bytes, { ignoreEncryption: true }))
+    }
+  }
+
   // Reconstruct page order
   for (const entry of logicalPages) {
     if (entry.type === "original") {
       const [copied] = await outDoc.copyPages(srcDoc, [entry.originalIndex])
+      outDoc.addPage(copied)
+    } else if (entry.type === "external") {
+      const extDoc = externalDocs.get(entry.filePath)!
+      const [copied] = await outDoc.copyPages(extDoc, [entry.originalIndex])
       outDoc.addPage(copied)
     } else {
       outDoc.addPage([entry.width, entry.height])

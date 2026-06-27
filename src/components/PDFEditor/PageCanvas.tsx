@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 import type { ContentEdit, EditorTool, RGB, TextEdit } from "../../store/usePDFEditorStore"
+import PDFPageRenderer from "./PDFPageRenderer"
 
 interface Props {
   fileSrc: string
@@ -462,11 +463,7 @@ export default function PageCanvas({
       {isBlankPage ? (
         <div style={{ width: cssW, height: cssH, background: "white" }} />
       ) : (
-        <iframe
-          src={`${fileSrc}#page=${pageNumber}&toolbar=0&navpanes=0&scrollbar=0`}
-          style={{ display: "block", width: cssW, height: cssH, border: "none", pointerEvents: "none" }}
-          title={`Page ${pageNumber}`}
-        />
+        <PDFPageRenderer src={fileSrc} pageNumber={pageNumber} width={cssW} height={cssH} />
       )}
 
       {/* SVG overlay — pen, highlight, signature, draw edits */}

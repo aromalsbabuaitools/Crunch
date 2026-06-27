@@ -11,6 +11,7 @@ import {
   X,
   Trash2,
   Undo2,
+  FilePlus,
 } from "lucide-react"
 import type { EditorTool, PDFFont, RGB } from "../../store/usePDFEditorStore"
 
@@ -45,6 +46,8 @@ interface Props {
   onDeleteSelected: () => void
   onSave: () => void
   onClose: () => void
+  onInsertBlankPage: () => void
+  onInsertFromPDF: () => void
 }
 
 function rgbToHex(c: RGB): string {
@@ -107,6 +110,8 @@ export default function EditorToolbar({
   onDeleteSelected,
   onSave,
   onClose,
+  onInsertBlankPage,
+  onInsertFromPDF,
 }: Props) {
   const hasSelectedText = selectedTextFontSize !== null
   // Effective values: if text is selected use its values, else use global defaults
@@ -250,6 +255,29 @@ export default function EditorToolbar({
               className="accent-neon-cyan"
             />
           </label>
+        </div>
+      )}
+
+      {activeTool === "page" && (
+        <div className="flex flex-col gap-2 border-t border-dark-border pt-2">
+          <span className="text-dark-muted text-xs uppercase tracking-wider">Page Management</span>
+          <button
+            onClick={onInsertBlankPage}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dark-border text-dark-muted text-sm hover:text-dark-text hover:bg-dark-card transition-colors"
+          >
+            <Plus size={14} />
+            Insert Blank Page
+          </button>
+          <button
+            onClick={onInsertFromPDF}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-dark-border text-dark-muted text-sm hover:text-dark-text hover:bg-dark-card transition-colors"
+          >
+            <FilePlus size={14} />
+            Insert from PDF…
+          </button>
+          <p className="text-dark-muted text-[10px] leading-relaxed mt-1">
+            Drag thumbnails to reorder · hover to delete
+          </p>
         </div>
       )}
 

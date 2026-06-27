@@ -24,7 +24,12 @@ brew install ghostscript
 cp "$(which gs)" src-tauri/binaries/gs-aarch64-apple-darwin   # Apple Silicon
 # or build universal binary via lipo — see README for full steps
 ```
-On Windows: copy `gswin64c.exe` to `src-tauri/binaries/gs-x86_64-pc-windows-msvc.exe`.
+On Windows: copy **both** `gswin64c.exe` and `gsdll64.dll` into `src-tauri/binaries/`:
+```
+src-tauri\binaries\gs-x86_64-pc-windows-msvc.exe   ← renamed from gswin64c.exe
+src-tauri\binaries\gsdll64.dll                      ← must sit alongside the exe
+```
+`gswin64c.exe` is a thin loader that calls `LoadLibrary("gsdll64.dll")` — omitting the DLL causes a LoadLibrary error 126 at runtime.
 
 ### CI / Releases
 Tag a commit to trigger the GitHub Actions build:

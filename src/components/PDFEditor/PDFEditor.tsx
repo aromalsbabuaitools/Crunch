@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { invoke } from "@tauri-apps/api/core"
 import { convertFileSrc } from "@tauri-apps/api/core"
@@ -21,6 +21,7 @@ export default function PDFEditor() {
   const store = usePDFEditorStore()
   const [loadError, setLoadError] = useState<string | null>(null)
   const [pdfBytes, setPdfBytes] = useState<ArrayBuffer | null>(null)
+  const canvasContainerRef = useRef<HTMLDivElement>(null)
 
   const file = files.find((f) => f.id === editingFileId)
 
@@ -69,6 +70,29 @@ export default function PDFEditor() {
     window.addEventListener("keydown", onKeyDown)
     return () => window.removeEventListener("keydown", onKeyDown)
   }, [store.undo])
+
+  async function handleInsertFromPDF() {
+    try {
+      const selected = await openDialog({
+        title: "Select PDF to Insert",
+        filters: [{ name: "PDF", extensions: ["pdf"] }],
+        multiple: false,
+      })
+      if (!selected || typeof selected !== "string") return
+      const assetUrl = convertFileSrc(selected)
+      const resp = await fetch(assetUrl)
+      const bytes = await resp.arrayBuffer()
+      const pdfDoc = await PDFDocument.load(bytes, { ignoreEncryption: true })
+      const pages = pdfDoc.getPages().map((p, i) => ({
+        originalIndex: i,
+        width: p.getWidth(),
+        height: p.getHeight(),
+      }))
+      store.insertPagesFromPDF(selected, pages, store.currentPageIndex)
+    } catch (e) {
+      console.error("Insert PDF failed", e)
+    }
+  }
 
   async function handlePickSignature() {
     try {
@@ -121,9 +145,25 @@ export default function PDFEditor() {
   const currentPage = store.logicalPages[store.currentPageIndex]
   const currentDims = currentPage?.type === "original"
     ? store.pageDimensions[currentPage.originalIndex]
-    : (currentPage?.type === "blank" ? { width: currentPage.width, height: currentPage.height } : null)
+    : (currentPage?.type === "blank" || currentPage?.type === "external")
+    ? { width: currentPage.width, height: currentPage.height }
+    : null
 
   const fileSrc = file ? convertFileSrc(file.path) : ""
+
+  function handleCanvasWheel(e: React.WheelEvent<HTMLDivElement>) {
+    const el = canvasContainerRef.current
+    if (!el) return
+    const atBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 2
+    const atTop = el.scrollTop <= 2
+    if (e.deltaY > 0 && atBottom && store.currentPageIndex < store.logicalPages.length - 1) {
+      store.setCurrentPage(store.currentPageIndex + 1)
+      el.scrollTop = 0
+    } else if (e.deltaY < 0 && atTop && store.currentPageIndex > 0) {
+      store.setCurrentPage(store.currentPageIndex - 1)
+      el.scrollTop = el.scrollHeight
+    }
+  }
 
   return (
     <AnimatePresence>
@@ -165,7 +205,7 @@ export default function PDFEditor() {
             />
 
             {/* Canvas area */}
-            <div className="flex-1 overflow-auto bg-dark-bg flex items-start justify-center p-6">
+            <div ref={canvasContainerRef} className="flex-1 overflow-auto bg-dark-bg flex items-start justify-center p-6" onWheel={handleCanvasWheel}>
               {loadError ? (
                 <div className="text-red-400 text-sm mt-20">{loadError}</div>
               ) : !pdfBytes ? (
@@ -175,8 +215,8 @@ export default function PDFEditor() {
                 </div>
               ) : currentPage && currentDims ? (
                 <PageCanvas
-                  fileSrc={fileSrc}
-                  pageNumber={currentPage.type === "original" ? currentPage.originalIndex + 1 : 1}
+                  fileSrc={currentPage.type === "external" ? convertFileSrc(currentPage.filePath) : fileSrc}
+                  pageNumber={currentPage.type === "original" || currentPage.type === "external" ? currentPage.originalIndex + 1 : 1}
                   isBlankPage={currentPage.type === "blank"}
                   logicalPageIndex={store.currentPageIndex}
                   pageDims={currentDims}
@@ -248,6 +288,8 @@ export default function PDFEditor() {
               onDeleteSelected={() => store.selectedEditId && store.deleteEdit(store.selectedEditId)}
               onSave={handleSave}
               onClose={handleClose}
+              onInsertBlankPage={() => store.insertBlankPage(store.currentPageIndex)}
+              onInsertFromPDF={handleInsertFromPDF}
             />
           </div>
         </motion.div>

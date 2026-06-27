@@ -60,6 +60,7 @@ export type ContentEdit = TextEdit | DrawEdit | HighlightEdit | SignatureEdit
 export type LogicalPage =
   | { type: "original"; originalIndex: number }
   | { type: "blank"; blankId: string; width: number; height: number }
+  | { type: "external"; filePath: string; originalIndex: number; width: number; height: number }
 
 interface PDFEditorStore {
   fileId: string | null
@@ -118,6 +119,7 @@ interface PDFEditorStore {
   reorderPages: (newLogicalOrder: number[]) => void
   deletePage: (logicalIndex: number) => void
   insertBlankPage: (afterLogicalIndex: number) => void
+  insertPagesFromPDF: (filePath: string, pages: Array<{ originalIndex: number; width: number; height: number }>, afterLogicalIndex: number) => void
 
   setSaving: (v: boolean) => void
   setSaveError: (e: string | null) => void
@@ -286,6 +288,30 @@ export const usePDFEditorStore = create<PDFEditorStore>((set) => ({
         edits: state.edits.map((e) => ({
           ...e,
           pageIndex: e.pageIndex >= insertAt ? e.pageIndex + 1 : e.pageIndex,
+        })),
+      }
+    }),
+
+  insertPagesFromPDF: (filePath, pages, afterLogicalIndex) =>
+    set((state) => {
+      const insertAt = afterLogicalIndex + 1
+      const newEntries: LogicalPage[] = pages.map((p) => ({
+        type: "external",
+        filePath,
+        originalIndex: p.originalIndex,
+        width: p.width,
+        height: p.height,
+      }))
+      const newPages = [
+        ...state.logicalPages.slice(0, insertAt),
+        ...newEntries,
+        ...state.logicalPages.slice(insertAt),
+      ]
+      return {
+        logicalPages: newPages,
+        edits: state.edits.map((e) => ({
+          ...e,
+          pageIndex: e.pageIndex >= insertAt ? e.pageIndex + pages.length : e.pageIndex,
         })),
       }
     }),

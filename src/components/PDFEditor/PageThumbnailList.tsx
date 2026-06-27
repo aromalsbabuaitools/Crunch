@@ -14,7 +14,9 @@ import {
 } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import { Trash2, Plus } from "lucide-react"
+import { convertFileSrc } from "@tauri-apps/api/core"
 import type { LogicalPage } from "../../store/usePDFEditorStore"
+import PDFPageRenderer from "./PDFPageRenderer"
 
 const THUMB_W = 80
 const THUMB_H = 110
@@ -58,19 +60,8 @@ function Thumbnail({ id, label, isBlank, fileSrc, pageNumber, pageDims, isActive
             <span className="text-dark-muted text-xs">Blank</span>
           </div>
         ) : (
-          <div style={{ width: THUMB_W, height: scaledH, overflow: "hidden", background: "white", position: "relative" }}>
-            <iframe
-              src={`${fileSrc}#page=${pageNumber}&toolbar=0&navpanes=0&scrollbar=0`}
-              style={{
-                border: "none",
-                pointerEvents: "none",
-                width: pageDims.width,
-                height: pageDims.height,
-                transform: `scale(${scale})`,
-                transformOrigin: "top left",
-              }}
-              title={`Thumbnail page ${pageNumber}`}
-            />
+          <div style={{ width: THUMB_W, height: scaledH, overflow: "hidden" }}>
+            <PDFPageRenderer src={fileSrc} pageNumber={pageNumber} width={THUMB_W} height={scaledH} />
           </div>
         )}
       </div>
@@ -127,18 +118,28 @@ export default function PageThumbnailList({
         <SortableContext items={ids} strategy={verticalListSortingStrategy}>
           {logicalPages.map((page, i) => {
             const isBlank = page.type === "blank"
-            const dims = isBlank
+            const dims = page.type === "blank"
+              ? { width: page.width, height: page.height }
+              : page.type === "external"
               ? { width: page.width, height: page.height }
               : (pageDimensions[page.originalIndex] ?? { width: 612, height: 792 })
-            const pageNumber = isBlank ? 1 : page.originalIndex + 1
+            const pageNumber = page.type === "original" || page.type === "external"
+              ? page.originalIndex + 1
+              : 1
+            const thumbSrc = page.type === "external" ? convertFileSrc(page.filePath) : fileSrc
+            const key = page.type === "original"
+              ? `orig-${page.originalIndex}`
+              : page.type === "blank"
+              ? page.blankId
+              : `ext-${page.filePath}-${page.originalIndex}-${i}`
 
             return (
               <Thumbnail
-                key={page.type === "original" ? `orig-${page.originalIndex}` : page.blankId}
+                key={key}
                 id={String(i)}
                 label={`Page ${i + 1}`}
                 isBlank={isBlank}
-                fileSrc={fileSrc}
+                fileSrc={thumbSrc}
                 pageNumber={pageNumber}
                 pageDims={dims}
                 isActive={i === currentPageIndex}
